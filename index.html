@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinémathèque — Documentaires</title>
+<style>
+  :root {
+    --bg: #f7f4ef;
+    --bg2: #efeae2;
+    --bg3: #e6dfd5;
+    --border: #d5cdc0;
+    --text: #2c2620;
+    --muted: #8a7f72;
+    --accent: #7a5c30;
+    --accent2: #9e7840;
+    --danger: #c0392b;
+    --tag-bg: #ede3d4;
+    --tag-text: #7a5c30;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* HEADER */
+  header { padding: 1.5rem 1.5rem 0; max-width: 1100px; margin: 0 auto; }
+  header h1 { font-size: 22px; font-weight: 500; letter-spacing: 0.02em; color: var(--accent); }
+  header p { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 1.25rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+  .toolbar input[type=text] {
+    flex: 1; min-width: 160px; background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 7px 12px; color: var(--text); font-size: 13px;
+  }
+  .toolbar input[type=text]:focus { outline: none; border-color: var(--accent2); }
+  .toolbar input[type=text]::placeholder { color: var(--muted); }
+  select {
+    background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius);
+    padding: 7px 10px; color: var(--text); font-size: 13px; cursor: pointer;
+  }
+  select:focus { outline: none; border-color: var(--accent2); }
+  .btn {
+    background: transparent; border: 0.5px solid var(--border); border-radius: var(--radius);
+    padding: 7px 14px; color: var(--text); font-size: 13px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn:hover { background: var(--bg3); border-color: var(--accent2); }
+  .btn.primary { border-color: var(--accent2); color: var(--accent); }
+  .btn.primary:hover { background: var(--tag-bg); }
+  .btn.danger { border-color: var(--danger); color: #e74c3c; }
+  .btn.danger:hover { background: rgba(192,57,43,0.1); }
+
+  /* STATS BAR */
+  .statsbar { display: flex; gap: 1.5rem; padding: 0 1.5rem 1rem; max-width: 1100px; margin: 0 auto; flex-wrap: wrap; }
+  .stat { font-size: 12px; color: var(--muted); }
+  .stat strong { color: var(--accent); font-weight: 500; }
+
+  /* TABLE */
+  .table-wrap { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 2rem; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 700px; }
+  th {
+    text-align: left; font-size: 11px; font-weight: 500; color: var(--muted);
+    padding: 8px 10px; border-bottom: 0.5px solid var(--border);
+    cursor: pointer; user-select: none; white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  th:hover { color: var(--text); }
+  th.active { color: var(--accent); }
+  td {
+    padding: 9px 10px; border-bottom: 0.5px solid var(--border);
+    color: var(--text); vertical-align: middle; max-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+  .col-titre { width: 22%; }
+  .col-real  { width: 16%; }
+  .col-an    { width: 7%; }
+  .col-pays  { width: 10%; }
+  .col-note  { width: 10%; }
+  .col-theme { width: 11%; }
+  .col-avis  { width: 20%; }
+  .col-act   { width: 4%; }
+
+  .stars { color: var(--accent); letter-spacing: 1px; font-size: 13px; }
+  .stars-off { color: var(--border); }
+  .tag {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px;
+    background: var(--tag-bg); color: var(--tag-text); border: 0.5px solid var(--accent2);
+    white-space: nowrap;
+  }
+  .muted-text { color: var(--muted); font-style: italic; font-size: 12px; }
+  .icon-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer; padding: 3px 5px;
+    border-radius: 4px; font-size: 15px; line-height: 1; transition: color 0.15s;
+  }
+  .icon-btn:hover { color: var(--text); }
+  .icon-btn.del:hover { color: #e74c3c; }
+  .actions-cell { display: flex; gap: 2px; justify-content: flex-end; }
+
+  .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
+  .count { font-size: 12px; color: var(--muted); padding: 0 1.5rem 0.5rem; max-width: 1100px; margin: 0 auto; }
+
+  /* MODAL */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1.5rem; width: min(520px, 95vw); max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 16px; font-weight: 500; color: var(--accent); margin-bottom: 1.25rem; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 8px 12px; color: var(--text); font-size: 14px; font-family: inherit;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent2); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+  .field textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+
+  .star-pick { display: flex; gap: 6px; }
+  .star-pick span {
+    font-size: 24px; cursor: pointer; color: var(--bg3);
+    transition: color 0.1s; user-select: none; line-height: 1;
+  }
+  .star-pick span.lit { color: var(--accent); }
+
+  /* SYNC STATUS */
+  .sync { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .sync-dot.ok { background: #27ae60; }
+  .sync-dot.err { background: #e74c3c; }
+  .sync-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* CONFIG */
+  .config-panel {
+    max-width: 1100px; margin: 0 auto 1rem; padding: 0 1.5rem;
+    display: none;
+  }
+  .config-panel.open { display: block; }
+  .config-box {
+    background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1.25rem;
+  }
+  .config-box h4 { font-size: 13px; font-weight: 500; color: var(--accent); margin-bottom: 1rem; }
+  .config-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px; }
+  .config-row .field { flex: 1; min-width: 200px; margin-bottom: 0; }
+  .config-note { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  .config-note a { color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .grid2 { grid-template-columns: 1fr; }
+    header h1 { font-size: 18px; }
+    .statsbar { gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cinémathèque documentaire</h1>
+  <p>Films qui m'inspirent — log personnel</p>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Rechercher titre, réal, pays, thème…" oninput="render()">
+  <select id="sortBy" onchange="render()">
+    <option value="titre">Titre</option>
+    <option value="realisateur">Réalisateur·rice</option>
+    <option value="annee">Année</option>
+    <option value="note" selected>Note</option>
+    <option value="pays">Pays</option>
+    <option value="theme">Thème</option>
+    <option value="date_ajout">Date d'ajout</option>
+  </select>
+  <select id="sortDir" onchange="render()">
+    <option value="asc">↑ Asc</option>
+    <option value="desc" selected>↓ Desc</option>
+  </select>
+  <select id="filterTheme" onchange="render()">
+    <option value="">Tous les thèmes</option>
+  </select>
+  <button class="btn primary" onclick="openModal()">+ Ajouter</button>
+  <button class="btn" onclick="toggleConfig()" title="Configuration Supabase">⚙</button>
+  <span class="sync"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">—</span></span>
+</div>
+
+<!-- CONFIG SUPABASE -->
+<div class="config-panel" id="configPanel">
+  <div class="config-box">
+    <h4>Configuration Supabase</h4>
+    <div class="config-row">
+      <div class="field">
+        <label>URL Supabase</label>
+        <input type="text" id="cfgUrl" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label>Anon Key</label>
+        <input type="text" id="cfgKey" placeholder="eyJhbGci…">
+      </div>
+      <button class="btn primary" onclick="saveConfig()">Sauvegarder</button>
+    </div>
+    <p class="config-note">
+      1. Créer un projet sur <a href="https://supabase.com" target="_blank">supabase.com</a><br>
+      2. Dans l'éditeur SQL, exécuter : <code>CREATE TABLE cinematheque (id int primary key, data text);</code><br>
+      3. Copier l'URL et la clé anon depuis Paramètres → API
+    </p>
+  </div>
+</div>
+
+<div class="statsbar" id="statsbar"></div>
+<p class="count" id="count"></p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-titre" onclick="sortCol('titre')">Titre <span id="s-titre"></span></th>
+        <th class="col-real"  onclick="sortCol('realisateur')">Réal <span id="s-realisateur"></span></th>
+        <th class="col-an"   onclick="sortCol('annee')">Année <span id="s-annee"></span></th>
+        <th class="col-pays" onclick="sortCol('pays')">Pays <span id="s-pays"></span></th>
+        <th class="col-note" onclick="sortCol('note')">Note <span id="s-note"></span></th>
+        <th class="col-theme" onclick="sortCol('theme')">Thème <span id="s-theme"></span></th>
+        <th class="col-avis">Avis</th>
+        <th class="col-act"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<!-- MODAL AJOUT/ÉDITION -->
+<div class="modal-bg" id="modalBg" onclick="bgClick(event)">
+  <div class="modal">
+    <h3 id="modalTitle">Ajouter un film</h3>
+    <div class="field">
+      <label>Titre *</label>
+      <input type="text" id="mTitre" placeholder="Titre du documentaire">
+    </div>
+    <div class="field">
+      <label>Réalisateur·rice *</label>
+      <input type="text" id="mReal" placeholder="Nom complet">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Année</label>
+        <input type="number" id="mAnnee" placeholder="2024" min="1895" max="2099">
+      </div>
+      <div class="field">
+        <label>Durée (min)</label>
+        <input type="number" id="mDuree" placeholder="90" min="1" max="600">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Pays</label>
+        <input type="text" id="mPays" placeholder="France, Italie…">
+      </div>
+      <div class="field">
+        <label>Thème</label>
+        <input type="text" id="mTheme" placeholder="Migration, Mémoire…">
+      </div>
+    </div>
+    <div class="field">
+      <label>Note (sur 5)</label>
+      <div class="star-pick" id="starPick"></div>
+    </div>
+    <div class="field">
+      <label>Avis personnel</label>
+      <textarea id="mAvis" placeholder="Ce qui m'a touché, des images marquantes, ce qui m'inspire pour ma propre pratique…"></textarea>
+    </div>
+    <div class="field">
+      <label>Lien (MUBI, Wikipedia…)</label>
+      <input type="url" id="mLien" placeholder="https://…">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn primary" onclick="saveFilm()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+let SB_URL = localStorage.getItem('sb_url') || '';
+let SB_KEY = localStorage.getItem('sb_key') || '';
+const SB_TABLE = 'cinematheque';
+const SB_ROW_ID = 1;
+
+function saveConfig() {
+  SB_URL = document.getElementById('cfgUrl').value.trim().replace(/\/$/, '');
+  SB_KEY = document.getElementById('cfgKey').value.trim();
+  localStorage.setItem('sb_url', SB_URL);
+  localStorage.setItem('sb_key', SB_KEY);
+  document.getElementById('configPanel').classList.remove('open');
+  syncStatus('loading', 'Connexion…');
+  sbPull();
+}
+
+function toggleConfig() {
+  const p = document.getElementById('configPanel');
+  p.classList.toggle('open');
+  document.getElementById('cfgUrl').value = SB_URL;
+  document.getElementById('cfgKey').value = SB_KEY;
+}
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let films = [];
+let nextId = 1;
+let sortKey = 'note';
+let sortDir = 'desc';
+let editId = null;
+let pickedNote = 0;
+
+// ─── SUPABASE ──────────────────────────────────────────────────────────────
+function sbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + SB_KEY,
+    'Prefer': 'resolution=merge-duplicates'
+  };
+}
+
+async function sbPush() {
+  if (!SB_URL || !SB_KEY) return;
+  syncStatus('loading', 'Sync…');
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}`, {
+      method: 'POST',
+      headers: sbHeaders(),
+      body: JSON.stringify({ id: SB_ROW_ID, data: JSON.stringify({ films, nextId }) })
+    });
+    if (!res.ok) throw new Error(res.status);
+    syncStatus('ok', 'Synchronisé');
+  } catch(e) {
+    syncStatus('err', 'Erreur sync');
+  }
+}
+
+async function sbPull() {
+  if (!SB_URL || !SB_KEY) { syncStatus('', ''); return; }
+  syncStatus('loading', 'Chargement…');
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}?id=eq.${SB_ROW_ID}&select=data`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    if (!res.ok) throw new Error(res.status);
+    const rows = await res.json();
+    if (rows.length && rows[0].data) {
+      const remote = JSON.parse(rows[0].data);
+      // Merge : garder le plus récent (plus de films = plus récent, simple heuristique)
+      if (remote.films && remote.films.length >= films.length) {
+        films = remote.films;
+        nextId = remote.nextId || (films.length ? Math.max(...films.map(f=>f.id))+1 : 1);
+        lsSave();
+        render();
+      }
+    }
+    syncStatus('ok', 'Synchronisé');
+  } catch(e) {
+    syncStatus('err', 'Hors ligne');
+  }
+}
+
+function syncStatus(state, label) {
+  const dot = document.getElementById('syncDot');
+  dot.className = 'sync-dot' + (state ? ' ' + state : '');
+  document.getElementById('syncLabel').textContent = label;
+}
+
+// ─── LOCAL STORAGE ─────────────────────────────────────────────────────────
+function lsSave() {
+  localStorage.setItem('cinematheque_films', JSON.stringify(films));
+  localStorage.setItem('cinematheque_nextid', nextId);
+}
+
+function lsLoad() {
+  try {
+    const f = localStorage.getItem('cinematheque_films');
+    const n = localStorage.getItem('cinematheque_nextid');
+    if (f) films = JSON.parse(f);
+    if (n) nextId = parseInt(n);
+  } catch(e) {}
+}
+
+// ─── STARS ─────────────────────────────────────────────────────────────────
+function buildStarPick(current) {
+  pickedNote = current || 0;
+  const el = document.getElementById('starPick');
+  el.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement('span');
+    s.textContent = i <= pickedNote ? '★' : '☆';
+    if (i <= pickedNote) s.classList.add('lit');
+    s.addEventListener('mouseenter', () => hlStars(i));
+    s.addEventListener('mouseleave', () => hlStars(pickedNote));
+    s.addEventListener('click', () => { pickedNote = i; hlStars(i); });
+    el.appendChild(s);
+  }
+}
+
+function hlStars(n) {
+  document.querySelectorAll('#starPick span').forEach((s, i) => {
+    s.textContent = i < n ? '★' : '☆';
+    s.classList.toggle('lit', i < n);
+  });
+}
+
+function starsHtml(n) {
+  let s = '';
+  for (let i = 1; i <= 5; i++) s += `<span class="${i<=n?'stars':'stars-off'}">${i<=n?'★':'☆'}</span>`;
+  return s;
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────
+function openModal(film) {
+  editId = film ? film.id : null;
+  document.getElementById('modalTitle').textContent = film ? 'Modifier' : 'Ajouter un film';
+  document.getElementById('mTitre').value = film?.titre || '';
+  document.getElementById('mReal').value  = film?.realisateur || '';
+  document.getElementById('mAnnee').value = film?.annee || '';
+  document.getElementById('mDuree').value = film?.duree || '';
+  document.getElementById('mPays').value  = film?.pays || '';
+  document.getElementById('mTheme').value = film?.theme || '';
+  document.getElementById('mAvis').value  = film?.avis || '';
+  document.getElementById('mLien').value  = film?.lien || '';
+  buildStarPick(film?.note || 0);
+  document.getElementById('modalBg').classList.add('open');
+  setTimeout(() => document.getElementById('mTitre').focus(), 50);
+}
+
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+function bgClick(e) { if (e.target === document.getElementById('modalBg')) closeModal(); }
+
+function saveFilm() {
+  const titre = document.getElementById('mTitre').value.trim();
+  const real  = document.getElementById('mReal').value.trim();
+  if (!titre || !real) { alert('Le titre et le·la réalisateur·rice sont obligatoires.'); return; }
+  const data = {
+    titre,
+    realisateur: real,
+    annee:  parseInt(document.getElementById('mAnnee').value) || null,
+    duree:  parseInt(document.getElementById('mDuree').value) || null,
+    pays:   document.getElementById('mPays').value.trim() || null,
+    theme:  document.getElementById('mTheme').value.trim() || null,
+    note:   pickedNote || null,
+    avis:   document.getElementById('mAvis').value.trim() || null,
+    lien:   document.getElementById('mLien').value.trim() || null,
+  };
+  if (editId) {
+    const idx = films.findIndex(f => f.id === editId);
+    films[idx] = { ...films[idx], ...data };
+  } else {
+    data.id = nextId++;
+    data.date_ajout = new Date().toISOString().slice(0, 10);
+    films.push(data);
+  }
+  closeModal();
+  lsSave();
+  sbPush();
+  render();
+}
+
+function deleteFilm(id) {
+  if (!confirm('Supprimer ce film de ta cinémathèque ?')) return;
+  films = films.filter(f => f.id !== id);
+  lsSave();
+  sbPush();
+  render();
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────
+function render() {
+  const q   = document.getElementById('search').value.toLowerCase();
+  const sk  = document.getElementById('sortBy').value;
+  const sd  = document.getElementById('sortDir').value;
+  const tf  = document.getElementById('filterTheme').value;
+  sortKey = sk; sortDir = sd;
+
+  // Mise à jour du filtre thèmes
+  const themes = [...new Set(films.map(f => f.theme).filter(Boolean))].sort();
+  const sel = document.getElementById('filterTheme');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tous les thèmes</option>' +
+    themes.map(t => `<option value="${t}" ${t===cur?'selected':''}>${t}</option>`).join('');
+
+  let list = films.filter(f => {
+    const matchQ = !q || (f.titre+f.realisateur+(f.pays||'')+(f.theme||'')+(f.avis||'')).toLowerCase().includes(q);
+    const matchT = !tf || f.theme === tf;
+    return matchQ && matchT;
+  });
+
+  list.sort((a, b) => {
+    let av = a[sk] ?? '', bv = b[sk] ?? '';
+    if (typeof av === 'number' && typeof bv === 'number') return sd==='asc' ? av-bv : bv-av;
+    return sd==='asc' ? String(av).localeCompare(String(bv), 'fr') : String(bv).localeCompare(String(av), 'fr');
+  });
+
+  // Stats bar
+  const avgNote = films.filter(f=>f.note).length
+    ? (films.filter(f=>f.note).reduce((s,f)=>s+f.note,0) / films.filter(f=>f.note).length).toFixed(1)
+    : '—';
+  document.getElementById('statsbar').innerHTML =
+    `<span class="stat"><strong>${films.length}</strong> film${films.length>1?'s':''} logué${films.length>1?'s':''}</span>` +
+    `<span class="stat">Note moy. <strong>${avgNote}</strong></span>` +
+    `<span class="stat"><strong>${[...new Set(films.map(f=>f.realisateur).filter(Boolean))].length}</strong> réalisateur·rices</span>` +
+    `<span class="stat"><strong>${themes.length}</strong> thème${themes.length>1?'s':''}</span>`;
+
+  document.getElementById('count').textContent =
+    list.length !== films.length ? `${list.length} résultat${list.length>1?'s':''} sur ${films.length}` :
+    `${list.length} film${list.length>1?'s':''}`;
+
+  // Sort icons
+  ['titre','realisateur','annee','pays','note','theme'].forEach(k => {
+    const el = document.getElementById('s-'+k);
+    if (!el) return;
+    el.textContent = k===sortKey ? (sd==='asc'?'↑':'↓') : '';
+    el.closest('th').classList.toggle('active', k===sortKey);
+  });
+
+  const tbody = document.getElementById('tbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">Aucun film trouvé.<br><span style="font-size:12px;color:var(--muted)">Modifie ta recherche ou ajoute ton premier film.</span></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(f => `
+    <tr>
+      <td class="col-titre" title="${f.titre}">
+        ${f.lien ? `<a href="${f.lien}" target="_blank" style="color:var(--accent);text-decoration:none;">${f.titre}</a>` : f.titre}
+      </td>
+      <td class="col-real" title="${f.realisateur}">${f.realisateur}</td>
+      <td class="col-an">${f.annee || '<span class="muted-text">—</span>'}</td>
+      <td class="col-pays" title="${f.pays||''}">${f.pays || '<span class="muted-text">—</span>'}</td>
+      <td class="col-note">${f.note ? starsHtml(f.note) : '<span class="muted-text">—</span>'}</td>
+      <td class="col-theme">${f.theme ? `<span class="tag">${f.theme}</span>` : '<span class="muted-text">—</span>'}</td>
+      <td class="col-avis" title="${f.avis||''}"><span class="muted-text">${f.avis || ''}</span></td>
+      <td class="col-act">
+        <div class="actions-cell">
+          <button class="icon-btn" onclick='editFilm(${f.id})' title="Modifier">✎</button>
+          <button class="icon-btn del" onclick='deleteFilm(${f.id})' title="Supprimer">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function editFilm(id) { openModal(films.find(f => f.id === id)); }
+
+function sortCol(k) {
+  if (sortKey === k) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    document.getElementById('sortDir').value = sortDir;
+  } else {
+    sortKey = k;
+    document.getElementById('sortBy').value = k;
+    sortDir = 'asc';
+    document.getElementById('sortDir').value = 'asc';
+  }
+  render();
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+lsLoad();
+render();
+if (SB_URL && SB_KEY) sbPull();
+else syncStatus('', 'Configurer Supabase →');
+</script>
+</body>
+</html>
