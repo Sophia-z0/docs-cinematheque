@@ -73,12 +73,13 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   tr:last-child td { border-bottom: none; }
+  td.col-note { overflow: visible; text-overflow: clip; white-space: nowrap; max-width: none; }
   tr:hover td { background: var(--bg2); }
   .col-titre { width: 17%; }
   .col-real  { width: 13%; }
   .col-an    { width: 6%; }
   .col-pays  { width: 8%; }
-  .col-note  { width: 8%; }
+  .col-note  { width: auto; white-space: nowrap; }
   .col-theme { width: 9%; }
   .col-ou    { width: 10%; }
   .col-date  { width: 9%; }
