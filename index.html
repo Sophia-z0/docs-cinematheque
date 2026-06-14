@@ -74,13 +74,15 @@
   }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--bg2); }
-  .col-titre { width: 22%; }
-  .col-real  { width: 16%; }
-  .col-an    { width: 7%; }
-  .col-pays  { width: 10%; }
-  .col-note  { width: 10%; }
-  .col-theme { width: 11%; }
-  .col-avis  { width: 20%; }
+  .col-titre { width: 17%; }
+  .col-real  { width: 13%; }
+  .col-an    { width: 6%; }
+  .col-pays  { width: 8%; }
+  .col-note  { width: 8%; }
+  .col-theme { width: 9%; }
+  .col-ou    { width: 10%; }
+  .col-date  { width: 9%; }
+  .col-avis  { width: 16%; }
   .col-act   { width: 4%; }
 
   .stars { color: var(--accent); letter-spacing: 1px; font-size: 13px; }
@@ -180,6 +182,8 @@
     <option value="pays">Pays</option>
     <option value="theme">Thème</option>
     <option value="date_ajout">Date d'ajout</option>
+    <option value="date_visionne">Date de visionnage</option>
+    <option value="ou">Où vu</option>
   </select>
   <select id="sortDir" onchange="render()">
     <option value="asc">↑ Asc</option>
@@ -229,6 +233,8 @@
         <th class="col-pays" onclick="sortCol('pays')">Pays <span id="s-pays"></span></th>
         <th class="col-note" onclick="sortCol('note')">Note <span id="s-note"></span></th>
         <th class="col-theme" onclick="sortCol('theme')">Thème <span id="s-theme"></span></th>
+        <th class="col-ou" onclick="sortCol('ou')">Où vu <span id="s-ou"></span></th>
+        <th class="col-date" onclick="sortCol('date_visionne')">Vu le <span id="s-date_visionne"></span></th>
         <th class="col-avis">Avis</th>
         <th class="col-act"></th>
       </tr>
@@ -276,6 +282,26 @@
     <div class="field">
       <label>Avis personnel</label>
       <textarea id="mAvis" placeholder="Ce qui m'a touché, des images marquantes, ce qui m'inspire pour ma propre pratique…"></textarea>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Où vu</label>
+        <select id="mOu">
+          <option value="">—</option>
+          <option>À la maison</option>
+          <option>Cinéma</option>
+          <option>MUBI</option>
+          <option>ONF</option>
+          <option>Festival</option>
+          <option>Vimeo / YouTube</option>
+          <option>Médiathèque</option>
+          <option>Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Date de visionnage</label>
+        <input type="date" id="mDateVisionne">
+      </div>
     </div>
     <div class="field">
       <label>Lien (MUBI, Wikipedia…)</label>
@@ -432,7 +458,9 @@ function openModal(film) {
   document.getElementById('mPays').value  = film?.pays || '';
   document.getElementById('mTheme').value = film?.theme || '';
   document.getElementById('mAvis').value  = film?.avis || '';
-  document.getElementById('mLien').value  = film?.lien || '';
+  document.getElementById('mOu').value          = film?.ou || '';
+  document.getElementById('mDateVisionne').value = film?.date_visionne || '';
+  document.getElementById('mLien').value         = film?.lien || '';
   buildStarPick(film?.note || 0);
   document.getElementById('modalBg').classList.add('open');
   setTimeout(() => document.getElementById('mTitre').focus(), 50);
@@ -453,8 +481,10 @@ function saveFilm() {
     pays:   document.getElementById('mPays').value.trim() || null,
     theme:  document.getElementById('mTheme').value.trim() || null,
     note:   pickedNote || null,
-    avis:   document.getElementById('mAvis').value.trim() || null,
-    lien:   document.getElementById('mLien').value.trim() || null,
+    avis:          document.getElementById('mAvis').value.trim() || null,
+    ou:            document.getElementById('mOu').value || null,
+    date_visionne: document.getElementById('mDateVisionne').value || null,
+    lien:          document.getElementById('mLien').value.trim() || null,
   };
   if (editId) {
     const idx = films.findIndex(f => f.id === editId);
@@ -520,7 +550,7 @@ function render() {
     `${list.length} film${list.length>1?'s':''}`;
 
   // Sort icons
-  ['titre','realisateur','annee','pays','note','theme'].forEach(k => {
+  ['titre','realisateur','annee','pays','note','theme','ou','date_visionne'].forEach(k => {
     const el = document.getElementById('s-'+k);
     if (!el) return;
     el.textContent = k===sortKey ? (sd==='asc'?'↑':'↓') : '';
@@ -529,7 +559,7 @@ function render() {
 
   const tbody = document.getElementById('tbody');
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">Aucun film trouvé.<br><span style="font-size:12px;color:var(--muted)">Modifie ta recherche ou ajoute ton premier film.</span></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty">Aucun film trouvé.<br><span style="font-size:12px;color:var(--muted)">Modifie ta recherche ou ajoute ton premier film.</span></td></tr>`;
     return;
   }
 
@@ -543,6 +573,8 @@ function render() {
       <td class="col-pays" title="${f.pays||''}">${f.pays || '<span class="muted-text">—</span>'}</td>
       <td class="col-note">${f.note ? starsHtml(f.note) : '<span class="muted-text">—</span>'}</td>
       <td class="col-theme">${f.theme ? `<span class="tag">${f.theme}</span>` : '<span class="muted-text">—</span>'}</td>
+      <td class="col-ou" title="${f.ou||''}">${f.ou ? `<span class="tag" style="border-color:var(--border);color:var(--muted);background:var(--bg3)">${f.ou}</span>` : '<span class="muted-text">—</span>'}</td>
+      <td class="col-date">${f.date_visionne || '<span class="muted-text">—</span>'}</td>
       <td class="col-avis" title="${f.avis||''}"><span class="muted-text">${f.avis || ''}</span></td>
       <td class="col-act">
         <div class="actions-cell">
